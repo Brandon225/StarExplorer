@@ -67,10 +67,43 @@ local mainGroup = display.newGroup()
 local uiGroup = display.newGroup()
 
 -- Display the background
-local background = display.newImageRect( backGroup, "background.png", 800, 1400 )
+local background = display.newImageRect(backGroup, "background.png", 800, 1400)
 background.x = display.contentCenterX
 background.y = display.contentCenterX
 
-ship = display.newImageRect( mainGroup, objectSheet, 4, 98, 79 )
+ship = display.newImageRect(mainGroup, objectSheet, 4, 98, 79)
+ship.x = display.contentCenterX
+ship.y = display.safeActualContentHeight - 100
+physics.addBody( ship, { radius=30, isSensor=true })
+ship.myName = "ship"
 
+-- setup game stat text
+livesText = display.newText(uiGroup, "Lives: " .. lives, 200, display.safeScreenOriginY, native.systemFont, 36)
+scoreText = display.newText(uiGroup, "Score: " .. score, 400, display.safeScreenOriginY, native.systemFont, 36)
 
+-- hide the statusbar
+display.setStatusBar(display.HiddenStatusBar)
+
+-- function to update the game stat text
+local function updateText()
+    livesText.text = "Lives: " .. lives
+    scoreText.text = "Score: " .. score
+end
+
+local function createAsteroid()
+    local newAsteroid = display.newImageRect(mainGroup, objectSheet, 1, 102, 85)
+    table.insert(asteroidsTable, newAsteroid)
+    physics.addBody(newAsteroid, "dynamic", { radius=40, bounce=0.8 })
+    newAsteroid.myName = "asteroid"
+
+    local whereFrom = math.random(3)
+
+    if (whereFrom == 1) then
+        -- From the left
+        newAsteroid.x = -60
+        newAsteroid.y = math.random(500)
+    end
+
+    -- STOPPED AT MOVEMENT
+
+end
