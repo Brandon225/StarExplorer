@@ -91,6 +91,7 @@ local function updateText()
 end
 
 local function createAsteroid()
+
     local newAsteroid = display.newImageRect(mainGroup, objectSheet, 1, 102, 85)
     table.insert(asteroidsTable, newAsteroid)
     physics.addBody(newAsteroid, "dynamic", { radius=40, bounce=0.8 })
@@ -102,8 +103,90 @@ local function createAsteroid()
         -- From the left
         newAsteroid.x = -60
         newAsteroid.y = math.random(500)
+        newAsteroid:setLinearVelocity(math.random(40, 120), math.random(20,60))
+    elseif (whereFrom == 2) then
+        -- From the top
+        newAsteroid.x = math.random( display.contentWidth )
+        newAsteroid.y = -60
+        newAsteroid:setLinearVelocity( math.random(-40,40), math.random(40,120))
+    elseif (whereFrom == 3) then
+        -- From the right
+        newAsteroid.x = display.contentWidth + 60
+        newAsteroid.y = math.random(500)
+        newAsteroid:setLinearVelocity(math.random(-120, -40), math.random(20,60))
     end
 
-    -- STOPPED AT MOVEMENT
+    newAsteroid:applyTorque(math.random(-6,6))
+end
 
+local function fireLaser()
+    local newLaser = display.newImageRect(mainGroup, objectSheet, 5, 14, 40)
+    physics.addBody(newLaser, "dynamic", {isSensor=true})
+    newLaser.isBullet = true
+    newLaser.myName = "laser"
+
+    newLaser.x = ship.x
+    newLaser.y = ship.y
+    newLaser:toBack()
+
+    transition.to(newLaser, {
+                            y=-40, 
+                            time=500, 
+                            onComplete = function() display.remove(newLaser) end
+                            })
+end
+    
+-- Add tap listener for firing
+ship:addEventListener("tap", fireLaser)
+
+-- Function to handle dragging the ship
+local function dragShip(event)
+    local ship = event.target
+    local phase = event.phase
+
+    if ("began" == phase) then
+        -- Set touch focus on the ship
+        display.currentStage:setFocus(ship)
+        -- Store initial offset position
+        ship.touchOffsetX = event.x - ship.x
+    elseif ("moved" == phase) then
+        -- Move the ship to the new touch position
+        ship.x = event.x - ship.touchOffsetX
+    elseif ("ended" == phase or "cancelled" == phase) then
+        -- Release touch focus on the ship
+        display.currentStage:setFocus(nil)
+    end
+
+    -- Prevent touch propagation to underlying objects
+    return true
+end
+
+ship:addEventListener("touch", dragShip)
+
+-- Create a game loop for info updates and asteriod cleanup
+local function gameLoop()
+    -- Create a new asteroid
+    createAsteroid()
+
+    -- Remove asteroids which have drifted off screen
+    for i = #asteroidsTable, 1, -1 do
+        local thisAsteroid = asteroidsTable[i]
+
+        if (thisAsteroid.x < -100 or
+            thisAsteroid.x > display.contentWidth+100 or
+            thisAsteroid.y < -100 or
+            thisAsteroid.y > display.contentHeight + 100) 
+        then
+            -- remove the asteroid from the screen
+            display.remove(thisAsteroid)
+            -- remove the asteroid from memory (the asteroidTable)
+            table.remove(asteroidsTable, i)
+        end
+    end
+end
+
+gameLoopTimer = timer.performWithDelay(500, gameLoop, 0)
+
+local function restoreShip()
+    ship.isBodyActive = false
 end
