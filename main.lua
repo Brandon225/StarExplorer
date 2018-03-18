@@ -248,3 +248,5 @@ local function onCollision(event)
         end
     end
 end
+
+Runtime:addEventListener("collision", onCollision)
