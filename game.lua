@@ -1,18 +1,17 @@
------------------------------------------------------------------------------------------
---
--- main.lua
---
------------------------------------------------------------------------------------------
 
--- Your code here
+local composer = require( "composer" )
+
+local scene = composer.newScene()
+
+-- -----------------------------------------------------------------------------------
+-- Code outside of the scene event functions below will only be executed ONCE unless
+-- the scene is removed entirely (not recycled) via "composer.removeScene()"
+-- -----------------------------------------------------------------------------------
 
 -- Setup Game Physics
 local physics = require("physics")
 physics.start()
 physics.setGravity( 0, 0 ) -- no gravity is space so 0,0 sets gravity to none
-
--- Seed the random number generator
-math.randomseed( os.time() )
 
 local sheetOptions = {
     frames = {
@@ -62,49 +61,9 @@ local gameLoopTimer
 local livesText
 local scoreText
 
-local messageText
-local messageSubText
-local messageBackground
-
-local backGroup = display.newGroup()
-local mainGroup = display.newGroup()
-local uiGroup = display.newGroup()
-local messageGroup = display.newGroup()
-
--- Display the background
-local background = display.newImageRect(backGroup, "background.png", 800, 1400)
-background.x = display.contentCenterX
-background.y = display.contentCenterY
-
-ship = display.newImageRect(mainGroup, objectSheet, 4, 98, 79)
-ship.x = display.contentCenterX
-ship.y = display.safeActualContentHeight - 100
-physics.addBody( ship, { radius=30, isSensor=true })
-ship.myName = "ship"
-
--- setup game stat text
-livesText = display.newText(uiGroup, "Lives: " .. lives, 200, display.safeScreenOriginY, native.systemFont, 36)
-scoreText = display.newText(uiGroup, "Score: " .. score, 400, display.safeScreenOriginY, native.systemFont, 36)
-
--- position message group
-messageGroup.y = display.screenOriginY - display.contentHeight
-
--- create a background rect for the group
-messageBackground = display.newRect(display.contentCenterX, display.contentCenterY, 400, 400)
-messageBackground:setFillColor(0, 0, 0)
-messageBackground.alpha = 0.8
-
-messageGroup:insert(messageBackground)
-
--- setup message text
-messageText = display.newText(messageGroup, "Game Over!", display.contentCenterX, display.contentCenterY, native.systemFont, 36)
-messageText:setFillColor(255,0,0)
-
--- setup message subtext
-messageSubText = display.newText(messageGroup, "tap to start a new game", display.contentCenterX, display.contentCenterY+40, native.systemFont, 24)
-
--- hide the statusbar
-display.setStatusBar(display.HiddenStatusBar)
+local backGroup
+local mainGroup
+local uiGroup
 
 -- function to update the game stat text
 local function updateText()
@@ -157,11 +116,7 @@ local function fireLaser()
                             onComplete = function() display.remove(newLaser) end
                             })
 end
-    
--- Add tap listener for firing
-ship:addEventListener("tap", fireLaser)
 
--- Function to handle dragging the ship
 local function dragShip(event)
     local ship = event.target
     local phase = event.phase
@@ -183,9 +138,6 @@ local function dragShip(event)
     return true
 end
 
-ship:addEventListener("touch", dragShip)
-
--- Create a game loop for info updates and asteriod cleanup
 local function gameLoop()
     -- Create a new asteroid
     createAsteroid()
@@ -207,8 +159,6 @@ local function gameLoop()
     end
 end
 
-gameLoopTimer = timer.performWithDelay(500, gameLoop, 0)
-
 local function restoreShip()
     print("RestoreShip!")
     
@@ -226,43 +176,6 @@ local function restoreShip()
         end
     })
 end
-
-local function updateStats(type, value)
-    if (type == 'score') then
-        -- Update score
-        score = value
-        scoreText.text = "Score: " .. score
-    elseif (type == 'lives') then
-        -- Update score
-        lives = value
-        livesText.text = "Lives: " .. lives
-    end
-end
-
--- Toggle GameOver message
-local function toggleGameOver(show)
-        
-    local y = 0
-    if (show == false) then
-        y = y - display.contentHeight
-    end
-
-    transition.to(messageGroup, {
-        y=y,
-        time=400,
-        onComplete = function()
-            if (show == false) then
-                updateStats('score', 0)
-                updateStats('lives', 3)
-                restoreShip()
-            end
-        end
-    })
-end
-
-messageBackground:addEventListener("tap", function()
-    toggleGameOver(false)
-end)
 
 local function onCollision(event)
     if (event.phase == "began") then
@@ -310,6 +223,86 @@ local function onCollision(event)
     end
 end
 
--- Start collision listener
-Runtime:addEventListener("collision", onCollision)
 
+-- -----------------------------------------------------------------------------------
+-- Scene event functions
+-- -----------------------------------------------------------------------------------
+
+-- create()
+function scene:create( event )
+
+	local sceneGroup = self.view
+	-- Code here runs when the scene is first created but has not yet appeared on screen
+
+	-- Temporarily pause the physics engine
+	physics.pause()
+
+    -- Set up display groups
+    backGroup = display.newGroup()
+    sceneGroup:insert(backgroup)
+
+    mainGroup = display.newGroup()
+    sceneGroup:insert(mainGroup)
+
+    uiGroup = display.newGroup()
+    sceneGroup:insert(uiGroup)
+
+    -- Display the background
+    local background = display.newImageRect(backGroup, "background.png", 800, 1400)
+    background.x = display.contentCenterX
+    background.y = display.contentCenterY
+
+end
+
+
+-- show()
+function scene:show( event )
+
+	local sceneGroup = self.view
+	local phase = event.phase
+
+	if ( phase == "will" ) then
+		-- Code here runs when the scene is still off screen (but is about to come on screen)
+
+	elseif ( phase == "did" ) then
+		-- Code here runs when the scene is entirely on screen
+
+	end
+end
+
+
+-- hide()
+function scene:hide( event )
+
+	local sceneGroup = self.view
+	local phase = event.phase
+
+	if ( phase == "will" ) then
+		-- Code here runs when the scene is on screen (but is about to go off screen)
+
+	elseif ( phase == "did" ) then
+		-- Code here runs immediately after the scene goes entirely off screen
+
+	end
+end
+
+
+-- destroy()
+function scene:destroy( event )
+
+	local sceneGroup = self.view
+	-- Code here runs prior to the removal of scene's view
+
+end
+
+
+-- -----------------------------------------------------------------------------------
+-- Scene event function listeners
+-- -----------------------------------------------------------------------------------
+scene:addEventListener( "create", scene )
+scene:addEventListener( "show", scene )
+scene:addEventListener( "hide", scene )
+scene:addEventListener( "destroy", scene )
+-- -----------------------------------------------------------------------------------
+
+return scene
