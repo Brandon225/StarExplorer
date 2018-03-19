@@ -50,7 +50,7 @@ local sheetOptions = {
 local objectSheet = graphics.newImageSheet("gameObjects.png", sheetOptions)
 
 -- Init Variables
-local lives = 0
+local lives = 3
 local score = 0
 local died = false
 
@@ -177,6 +177,11 @@ local function restoreShip()
     })
 end
 
+local function endGame()
+    composer.setVariable("finalScore", score)
+    composer.gotoScene("menu", {time=800, effect="crossFade"})
+end
+
 local function onCollision(event)
     if (event.phase == "began") then
 
@@ -199,7 +204,8 @@ local function onCollision(event)
             end
 
             -- Update score
-            updateStats('score', score+100)
+            score = score + 100
+            updateText()
             
         elseif ((obj1.myName == "ship" and obj2.myName == "asteroid") or (obj1.myName == "asteroid" and obj2.myName == "ship")) then
             
@@ -208,12 +214,15 @@ local function onCollision(event)
                 died = true
 
                 -- Update lives
-                updateStats('lives', lives-1)
+                lives = lives - 1
+                updateText()
 
 
                 if (lives <= 0) then
-                    ship.alpha = 0
-                    toggleGameOver(true)
+                    -- ship.alpha = 0
+                    -- toggleGameOver(true)
+                    display.remove(ship)
+                    timer.performWithDelay(2000, endGame)
                 else 
                     ship.alpha = 0
                     timer.performWithDelay(1000, restoreShip)
@@ -239,14 +248,14 @@ function scene:create( event )
 
     -- Set up display groups
     backGroup = display.newGroup()
-    sceneGroup:insert(backgroup)
-
+    sceneGroup:insert(backGroup)
+ 
     mainGroup = display.newGroup()
     sceneGroup:insert(mainGroup)
 
     uiGroup = display.newGroup()
     sceneGroup:insert(uiGroup)
-
+    
     -- Display the background
     local background = display.newImageRect(backGroup, "background.png", 800, 1400)
     background.x = display.contentCenterX
@@ -259,13 +268,11 @@ function scene:create( event )
     ship.myName = "ship"
 
     -- setup game stat text
-    livesText = display.newText(uiGroup, "Lives: " .. lives, 200, display.safeScreenOriginY, native.systemFont, 36)
-    scoreText = display.newText(uiGroup, "Score: " .. score, 400, display.safeScreenOriginY, native.systemFont, 36)
+    livesText = display.newText(uiGroup, "Lives: " .. lives, 200, display.safeScreenOriginY+40, native.systemFont, 36)
+    scoreText = display.newText(uiGroup, "Score: " .. score, 400, display.safeScreenOriginY+40, native.systemFont, 36)
 
     ship:addEventListener("tap", fireLaser)
     ship:addEventListener("touch", dragShip)
-
-    -- STOPPED AT Showing the Scene
 end
 
 
@@ -281,6 +288,10 @@ function scene:show( event )
 	elseif ( phase == "did" ) then
 		-- Code here runs when the scene is entirely on screen
 
+        -- Start the physics engine and collision detection and game loop
+        physics.start()
+        Runtime:addEventListener("collision", onCollision)
+        gameLoopTimer = timer.performWithDelay(500, gameLoop, 0)
 	end
 end
 
@@ -294,9 +305,16 @@ function scene:hide( event )
 	if ( phase == "will" ) then
 		-- Code here runs when the scene is on screen (but is about to go off screen)
 
+        -- Stop the game loop
+        timer.cancel(gameLoopTimer)
+
 	elseif ( phase == "did" ) then
 		-- Code here runs immediately after the scene goes entirely off screen
 
+        -- Remove collision listener and pause physics
+        Runtime:removeEventListener("collision", onCollision)
+        physics.pause()
+        composer.removeScene("game")
 	end
 end
 
