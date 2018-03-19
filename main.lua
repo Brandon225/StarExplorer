@@ -51,7 +51,7 @@ local sheetOptions = {
 local objectSheet = graphics.newImageSheet("gameObjects.png", sheetOptions)
 
 -- Init Variables
-local lives = 3
+local lives = 0
 local score = 0
 local died = false
 
@@ -62,9 +62,15 @@ local gameLoopTimer
 local livesText
 local scoreText
 
+local showingMessage = false
+local messageText
+local messageSubText
+local messageBackground
+
 local backGroup = display.newGroup()
 local mainGroup = display.newGroup()
 local uiGroup = display.newGroup()
+local messageGroup = display.newGroup()
 
 -- Display the background
 local background = display.newImageRect(backGroup, "background.png", 800, 1400)
@@ -80,6 +86,23 @@ ship.myName = "ship"
 -- setup game stat text
 livesText = display.newText(uiGroup, "Lives: " .. lives, 200, display.safeScreenOriginY, native.systemFont, 36)
 scoreText = display.newText(uiGroup, "Score: " .. score, 400, display.safeScreenOriginY, native.systemFont, 36)
+
+-- position message group
+messageGroup.y = display.screenOriginY - display.contentHeight
+
+-- create a background rect for the group
+messageBackground = display.newRect(display.contentCenterX, display.contentCenterY, 400, 400)
+messageBackground:setFillColor(0, 0, 0)
+messageBackground.alpha = 0.8
+
+messageGroup:insert(messageBackground)
+
+-- setup message text
+messageText = display.newText(messageGroup, "Game Over!", display.contentCenterX, display.contentCenterY, native.systemFont, 36)
+messageText:setFillColor(255,0,0)
+
+-- setup message subtext
+messageSubText = display.newText(messageGroup, "tap to start a new game", display.contentCenterX, display.contentCenterY+40, native.systemFont, 24)
 
 -- hide the statusbar
 display.setStatusBar(display.HiddenStatusBar)
@@ -188,6 +211,8 @@ end
 gameLoopTimer = timer.performWithDelay(500, gameLoop, 0)
 
 local function restoreShip()
+    print("RestoreShip!")
+    
     ship.isBodyActive = false
     ship.x = display.contentCenterX
     ship.y = display.contentHeight - 100
@@ -202,6 +227,43 @@ local function restoreShip()
         end
     })
 end
+
+local function updateStats(type, value)
+    if (type == 'score') then
+        -- Update score
+        score = score + value
+        scoreText.text = "Score: " .. score
+    elseif (type == 'lives') then
+        -- Update score
+        lives = value
+        livesText.text = "Lives: " .. lives
+    end
+end
+
+-- Toggle GameOver message
+local function toggleGameOver(show)
+        
+    local y = 0
+    if (show == false) then
+        y = y - display.contentHeight
+    end
+
+    transition.to(messageGroup, {
+        y=y,
+        time=400,
+        onComplete = function()
+            if (show == false) then
+                updateStats('score', 0)
+                updateStats('lives', 3)
+                restoreShip()
+            end
+        end
+    })
+end
+
+messageBackground:addEventListener("tap", function()
+    toggleGameOver(false)
+end)
 
 local function onCollision(event)
     if (event.phase == "began") then
@@ -225,8 +287,7 @@ local function onCollision(event)
             end
 
             -- Update score
-            score = score + 100
-            scoreText.text = "Score: " .. score
+            updateStats('score', 100)
             
         elseif ((obj1.myName == "ship" and obj2.myName == "asteroid") or (obj1.myName == "asteroid" and obj2.myName == "ship")) then
             
@@ -235,11 +296,12 @@ local function onCollision(event)
                 died = true
 
                 -- Update lives
-                lives = lives - 1
-                livesText.text = "Lives: " .. lives
+                updateStats('lives', lives-1)
 
-                if (lives == 0) then
-                    display.remove(ship)
+
+                if (lives <= 0) then
+                    ship.alpha = 0
+                    toggleGameOver(true)
                 else 
                     ship.alpha = 0
                     timer.performWithDelay(1000, restoreShip)
@@ -249,4 +311,6 @@ local function onCollision(event)
     end
 end
 
+-- Start collision listener
 Runtime:addEventListener("collision", onCollision)
+
