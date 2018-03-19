@@ -17,17 +17,37 @@ local filePath = system.pathForFile("scores.json", system.DocumentsDirectory)
 
 
 local function loadScores()
-	-- load file from path
+	-- load file from path for reading
 	local file = io.open(filePath "r")
 	-- confirm that file exists
 	if (file) then
-		
+		-- dump file
 		local contents = file:read("*a")
+		-- close file
 		io.close(file)
+		-- decode contents of file into scoresTable
 		scoresTable = json.decode(contents)
 	end
+
+	-- if scoresTable is empty add default data to scoresTable
 	if (scoresTable == nil or #scoresTable == 0) then
-		scoresTable = {0,0,0,0,0,0,0,0,0,0}
+		scoresTable = {10000, 7500, 5200, 4700, 3500, 3200, 1200, 1100, 800, 500}
+	end
+end
+
+local function saveScores()
+	
+	-- Only save the highest 10 scores
+	for i = #scoresTable, 11, -1 do
+		table.remove(scoresTable, i)
+	end
+
+	-- open file for writing
+	local file = io.open(filePath, "w")
+
+	if (file) then
+		file:write(json.encode(scoresTable))
+		io.close(file)
 	end
 end
 
@@ -41,6 +61,20 @@ function scene:create( event )
 	local sceneGroup = self.view
 	-- Code here runs when the scene is first created but has not yet appeared on screen
 
+	-- Load the previous scores
+	loadScores()
+
+	-- Insert the saved score from the last game into the table, then reset it
+	table.insert( scoresTable, composer.getVariable("finalScore") )
+	composer.setVariable("finalScore", 0)
+
+	-- Sort the table entries from highest to lowest
+	local function compare(a, b)
+		return a > b
+	end
+	table.sort(scoresTable, compare)
+
+	-- STOPPED AT 4
 end
 
 
