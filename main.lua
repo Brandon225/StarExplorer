@@ -231,7 +231,7 @@ end
 local function updateStats(type, value)
     if (type == 'score') then
         -- Update score
-        score = score + value
+        score = value
         scoreText.text = "Score: " .. score
     elseif (type == 'lives') then
         -- Update score
@@ -287,7 +287,7 @@ local function onCollision(event)
             end
 
             -- Update score
-            updateStats('score', 100)
+            updateStats('score', score+100)
             
         elseif ((obj1.myName == "ship" and obj2.myName == "asteroid") or (obj1.myName == "asteroid" and obj2.myName == "ship")) then
             
