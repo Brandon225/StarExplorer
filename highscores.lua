@@ -18,7 +18,7 @@ local filePath = system.pathForFile("scores.json", system.DocumentsDirectory)
 
 local function loadScores()
 	-- load file from path for reading
-	local file = io.open(filePath "r")
+	local file = io.open(filePath, "r")
 	-- confirm that file exists
 	if (file) then
 		-- dump file
@@ -51,6 +51,9 @@ local function saveScores()
 	end
 end
 
+local function gotoMenu()
+	composer.gotoScene("menu", {time=800, effect="crossFade"})	
+end
 -- -----------------------------------------------------------------------------------
 -- Scene event functions
 -- -----------------------------------------------------------------------------------
@@ -74,7 +77,37 @@ function scene:create( event )
 	end
 	table.sort(scoresTable, compare)
 
-	-- STOPPED AT 4
+	-- Save the scores
+	saveScores()
+
+	-- Create the background image
+	local background = display.newImageRect(sceneGroup, "background.png", 800, 1400)
+	background.x = display.contentCenterX
+	background.y = display.contentCenterY
+	
+	-- Create title text
+	local highScoresHeader = display.newText("High Scores", display.contentCenterX, 100, native.systemFont, 44)
+
+	-- Add the scores
+	for i=1,10 do
+		if (scoresTable[i]) then
+			-- place the score text
+			local yPos = 150 + (i*56)
+
+			-- create 2 text objects - one for rank - one for score
+			local rankNum = display.newText(sceneGroup, i .. ")", display.contentCenterX-50, yPos, native.systemFont, 36)
+			rankNum:setFillColor(0.8)
+			rankNum.anchorX = 1
+
+			local theScore = display.newText(sceneGroup, scoresTable[i], display.contentCenterX-30, yPos, native.systemFont, 36)
+			theScore.anchorX = 0
+
+			-- Create a button to allow return to Menu
+			local menuButton = display.newText(sceneGroup, "Menu", display.contentCenterX, 810, native.systemFont, 44)
+			menuButton:setFillColor(0.75, 0.78, 1)
+			menuButton:addEventListener("tap", gotoMenu)
+		end
+	end
 end
 
 
@@ -106,6 +139,8 @@ function scene:hide( event )
 	elseif ( phase == "did" ) then
 		-- Code here runs immediately after the scene goes entirely off screen
 
+		-- Cleanup scene
+		composer.removeScene("highscores")
 	end
 end
 
