@@ -289,8 +289,7 @@ function scene:create( event )
     explosionSound = audio.loadSound("audio/explosion.wav");
     fireSound = audio.loadSound("audio/fire.wav");
 
-    -- load the background music
-    -- Stream background music
+    -- load stream background music
     musicTrack = audio.loadStream("audio/80s-Space-Game_Looping.wav")
 
 end
